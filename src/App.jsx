@@ -25,6 +25,15 @@ export default function App() {
   const lenisRef = useRef(null);
 
   useEffect(() => {
+    // Native scroll on touch devices is hardware-accelerated and smoother
+    // than JS-driven smooth scroll — Lenis on mobile causes jank + fights
+    // with iOS momentum. Desktop keeps the polished Lenis scroll.
+    const isTouch = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+    if (isTouch) {
+      const t = setTimeout(() => ScrollTrigger.refresh(), 100);
+      return () => clearTimeout(t);
+    }
+
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
