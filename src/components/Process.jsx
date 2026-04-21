@@ -71,9 +71,12 @@ export default function Process() {
   const lineRefs   = useRef(steps.map(() => null));
 
   useEffect(() => {
+    const isMobile = window.matchMedia('(max-width: 768px), (hover: none) and (pointer: coarse)').matches;
     const ctx = gsap.context(() => {
 
-      const TOGGLE = 'play reverse play reverse';
+      // On mobile native scroll, scrub-based ScrollTriggers stutter (especially
+      // during iOS momentum). Use plain play-on-enter so steps reliably appear.
+      const TOGGLE = isMobile ? 'play none none none' : 'play reverse play reverse';
 
       /* ── 1. CINEMATIC HEADER ─────────────────────────────────────────────── */
       gsap.fromTo('.prc-badge',
@@ -108,11 +111,16 @@ export default function Process() {
         const lineEl  = lineRefs.current[i];
         const { circleRef, pathRef } = checkRefs.current[i];
 
-        /* Card slides up / back down */
+        /* Card slides up / back down — drop the blur on mobile (cheap GPU + safer) */
         gsap.fromTo(card,
-          { opacity: 0, y: 32, filter: 'blur(3px)' },
-          { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.6, ease: 'power3.out',
-            scrollTrigger: { trigger: card, start: 'top 90%', toggleActions: TOGGLE } }
+          isMobile
+            ? { opacity: 0, y: 24 }
+            : { opacity: 0, y: 32, filter: 'blur(3px)' },
+          isMobile
+            ? { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out',
+                scrollTrigger: { trigger: card, start: 'top 92%', toggleActions: TOGGLE } }
+            : { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.6, ease: 'power3.out',
+                scrollTrigger: { trigger: card, start: 'top 90%', toggleActions: TOGGLE } }
         );
 
         /* Number + tag */
@@ -136,35 +144,50 @@ export default function Process() {
             scrollTrigger: { trigger: card, start: 'top 84%', toggleActions: TOGGLE } }
         );
 
-        /* Checkmark — scrub so it draws/undraws smoothly with scroll */
+        /* Checkmark — scrub on desktop, plain play-once on mobile */
         if (circleRef && pathRef) {
-          ScrollTrigger.create({
-            trigger: card,
-            start: 'top 78%',
-            end:   'top 55%',
-            scrub: 0.8,
-            onUpdate(self) {
-              const p = self.progress;
-              /* First 70% of progress: draw circle; last 30%: draw check */
-              const circleProg = Math.min(1, p / 0.7);
-              const checkProg  = Math.max(0, (p - 0.7) / 0.3);
-              circleRef.style.strokeDashoffset = 63 * (1 - circleProg);
-              pathRef.style.strokeDashoffset   = 14 * (1 - checkProg);
-            },
-          });
+          if (isMobile) {
+            const tl = gsap.timeline({
+              scrollTrigger: { trigger: card, start: 'top 85%', toggleActions: 'play none none none' },
+            });
+            tl.to(circleRef, { strokeDashoffset: 0, duration: 0.6, ease: 'power2.out' })
+              .to(pathRef,   { strokeDashoffset: 0, duration: 0.3, ease: 'power2.out' }, '-=0.1');
+          } else {
+            ScrollTrigger.create({
+              trigger: card,
+              start: 'top 78%',
+              end:   'top 55%',
+              scrub: 0.8,
+              onUpdate(self) {
+                const p = self.progress;
+                const circleProg = Math.min(1, p / 0.7);
+                const checkProg  = Math.max(0, (p - 0.7) / 0.3);
+                circleRef.style.strokeDashoffset = 63 * (1 - circleProg);
+                pathRef.style.strokeDashoffset   = 14 * (1 - checkProg);
+              },
+            });
+          }
         }
 
-        /* Connector line — scrub fill/unfill */
+        /* Connector line — scrub on desktop, play-once on mobile */
         if (lineEl && i < steps.length - 1) {
-          ScrollTrigger.create({
-            trigger: card,
-            start: 'top 68%',
-            end:   'top 48%',
-            scrub: 0.6,
-            onUpdate(self) {
-              lineEl.style.height = `${self.progress * 40}px`;
-            },
-          });
+          if (isMobile) {
+            gsap.fromTo(lineEl,
+              { height: 0 },
+              { height: 40, duration: 0.45, ease: 'power2.out',
+                scrollTrigger: { trigger: card, start: 'top 80%', toggleActions: 'play none none none' } }
+            );
+          } else {
+            ScrollTrigger.create({
+              trigger: card,
+              start: 'top 68%',
+              end:   'top 48%',
+              scrub: 0.6,
+              onUpdate(self) {
+                lineEl.style.height = `${self.progress * 40}px`;
+              },
+            });
+          }
         }
       });
 
