@@ -26,7 +26,7 @@ const HEADING_WORDS = 'So sehen unsere Videos aus'.split(' ');
 const CARD_W   = 220; // px – width of each card
 const CARD_GAP = 24;  // px – gap between cards
 
-function VideoCard({ brand, src, isCenter, onSelect }) {
+function VideoCard({ brand, src, isCenter, isNear, onSelect }) {
   const videoRef = useRef(null);
   const [playing, setPlaying] = useState(false);
 
@@ -44,7 +44,7 @@ function VideoCard({ brand, src, isCenter, onSelect }) {
     const onEnded = () => setPlaying(false);
     vid.addEventListener('ended', onEnded);
     return () => vid.removeEventListener('ended', onEnded);
-  }, []);
+  }, [isNear]);
 
   const handleClick = (e) => {
     e.stopPropagation();
@@ -139,20 +139,24 @@ function VideoCard({ brand, src, isCenter, onSelect }) {
             : '0 10px 30px -8px rgba(0,0,0,0.6)',
         }}
       >
-        <video
-          ref={videoRef}
-          className="w-full h-full object-cover"
-          playsInline
-          muted
-          preload="metadata"
-          onLoadedMetadata={handleLoadedMetadata}
-        >
-          {/* Desktop browsers (Chrome/Firefox) won't touch .mov unless we
-              declare an mp4 type — most of these files are H.264 in a .mov
-              container, which they can actually decode. */}
-          <source src={encodeURI(src)} type="video/mp4" />
-          <source src={encodeURI(src)} type="video/quicktime" />
-        </video>
+        {isNear ? (
+          <video
+            ref={videoRef}
+            className="w-full h-full object-cover"
+            playsInline
+            muted
+            preload="metadata"
+            onLoadedMetadata={handleLoadedMetadata}
+          >
+            {/* Desktop browsers (Chrome/Firefox) won't touch .mov unless we
+                declare an mp4 type — most of these files are H.264 in a .mov
+                container, which they can actually decode. */}
+            <source src={encodeURI(src)} type="video/mp4" />
+            <source src={encodeURI(src)} type="video/quicktime" />
+          </video>
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-white/[0.04] to-white/[0.02]" />
+        )}
 
         {/* gradient overlay */}
         <div
@@ -343,6 +347,7 @@ export default function VideoTestimonials() {
               brand={v.brand}
               src={v.src}
               isCenter={i === active}
+              isNear={Math.abs(i - active) <= 1}
               onSelect={() => goTo(i)}
             />
           ))}

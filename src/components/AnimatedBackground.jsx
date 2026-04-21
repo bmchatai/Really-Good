@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 const ACCENT_RGB = '47,215,191';
 
 export default function AnimatedBackground({ variant = 'default' }) {
   const gridSize = variant === 'tight' ? '60px 60px' : '80px 80px';
+  const rootRef = useRef(null);
 
   // Detect touch/mobile so we can render a slimmer, GPU-cheaper version.
   // Mobile gets fewer particles, smaller blurs, no rotating conic gradient.
@@ -14,6 +15,25 @@ export default function AnimatedBackground({ variant = 'default' }) {
     update();
     mq.addEventListener('change', update);
     return () => mq.removeEventListener('change', update);
+  }, []);
+
+  // Only render heavy animations when the section is actually on screen.
+  // Ten sections each running infinite CSS animations simultaneously tanks
+  // the GPU on mobile Safari — IntersectionObserver unmounts the animation
+  // layer when the user scrolls past.
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      setVisible(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      ([entry]) => setVisible(entry.isIntersecting),
+      { rootMargin: '200px 0px' }
+    );
+    io.observe(el);
+    return () => io.disconnect();
   }, []);
 
   const particleCount = isMobile ? 8 : 28;
@@ -45,7 +65,14 @@ export default function AnimatedBackground({ variant = 'default' }) {
   );
 
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+    <div ref={rootRef} className="pointer-events-none absolute inset-0 overflow-hidden">
+      {!visible ? (
+        <div
+          className="absolute inset-0"
+          style={{ background: 'radial-gradient(ellipse at center, transparent 40%, #000 95%)' }}
+        />
+      ) : (
+      <>
       <style>{`
         @keyframes ab-orb-a { 0%,100% { transform: translate3d(-8%, 0, 0) scale(1); } 50% { transform: translate3d(8%, -6%, 0) scale(1.12); } }
         @keyframes ab-orb-b { 0%,100% { transform: translate3d(6%, 4%, 0) scale(1.05); } 50% { transform: translate3d(-10%, -4%, 0) scale(0.92); } }
@@ -229,6 +256,8 @@ export default function AnimatedBackground({ variant = 'default' }) {
         className="absolute inset-0"
         style={{ background: 'radial-gradient(ellipse at center, transparent 40%, #000 95%)' }}
       />
+      </>
+      )}
     </div>
   );
 }
