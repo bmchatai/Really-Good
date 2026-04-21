@@ -14,8 +14,22 @@ export default function NigelaTestimonial() {
   const toggle = () => {
     const vid = videoRef.current;
     if (!vid) return;
-    if (playing) { vid.pause(); setPlaying(false); }
-    else          { vid.play();  setPlaying(true);  }
+    if (playing) {
+      vid.pause();
+      setPlaying(false);
+    } else {
+      vid.muted = false; // user gesture → allow sound
+      vid.play();
+      setPlaying(true);
+    }
+  };
+
+  // iOS Safari refuses to paint the first frame of a <video> until a user
+  // gesture unless it's muted + we nudge currentTime after metadata loads.
+  const handleLoadedMetadata = () => {
+    const vid = videoRef.current;
+    if (!vid) return;
+    try { vid.currentTime = 0.1; } catch { /* ignore */ }
   };
 
   useEffect(() => {
@@ -123,7 +137,9 @@ export default function NigelaTestimonial() {
               src="/Nigela Testi Chris.mp4"
               className="w-full h-full object-cover"
               playsInline
+              muted
               preload="metadata"
+              onLoadedMetadata={handleLoadedMetadata}
             />
 
             {/* gradient overlay */}

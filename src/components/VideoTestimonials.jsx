@@ -54,8 +54,23 @@ function VideoCard({ brand, src, isCenter, onSelect }) {
     }
     const vid = videoRef.current;
     if (!vid) return;
-    if (playing) { vid.pause(); setPlaying(false); }
-    else          { vid.play();  setPlaying(true);  }
+    if (playing) {
+      vid.pause();
+      setPlaying(false);
+    } else {
+      // Unmute on explicit user gesture so sound plays back
+      vid.muted = false;
+      vid.play();
+      setPlaying(true);
+    }
+  };
+
+  // iOS Safari won't render the first frame until user interaction unless the
+  // video is muted and we explicitly nudge currentTime once metadata loads.
+  const handleLoadedMetadata = () => {
+    const vid = videoRef.current;
+    if (!vid) return;
+    try { vid.currentTime = 0.1; } catch { /* ignore */ }
   };
 
   return (
@@ -128,7 +143,9 @@ function VideoCard({ brand, src, isCenter, onSelect }) {
           ref={videoRef}
           className="w-full h-full object-cover"
           playsInline
+          muted
           preload="metadata"
+          onLoadedMetadata={handleLoadedMetadata}
         >
           {/* Desktop browsers (Chrome/Firefox) won't touch .mov unless we
               declare an mp4 type — most of these files are H.264 in a .mov
