@@ -149,7 +149,7 @@ export default function NigelaTestimonial() {
           <img
             src="/kunden-logos/Nigela.png"
             alt="Nigela"
-            className="object-contain brightness-0 invert" style={{ height: 80, maxWidth: 280 }}
+            className="object-contain brightness-0 invert h-32 md:h-44 max-w-[420px] md:max-w-[520px]"
           />
 
           {/* Description */}
