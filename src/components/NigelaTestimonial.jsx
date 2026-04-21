@@ -10,6 +10,28 @@ export default function NigelaTestimonial() {
   const container = useRef(null);
   const videoRef  = useRef(null);
   const [playing, setPlaying] = useState(false);
+  // Defer mounting the <video> until the section is near the viewport so it
+  // doesn't hold an H.264 decoder while the user is on the hero or scrolling
+  // through the page.
+  const [mountVideo, setMountVideo] = useState(false);
+  useEffect(() => {
+    const el = container.current;
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      setMountVideo(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setMountVideo(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: '300px 0px' }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   const toggle = () => {
     const vid = videoRef.current;
@@ -132,15 +154,19 @@ export default function NigelaTestimonial() {
               boxShadow: '0 0 50px -10px rgba(47,215,191,0.35), 0 30px 70px -15px rgba(0,0,0,0.9)',
             }}
           >
-            <video
-              ref={videoRef}
-              src="/Nigela Testi Chris.mp4"
-              className="w-full h-full object-cover"
-              playsInline
-              muted
-              preload="metadata"
-              onLoadedMetadata={handleLoadedMetadata}
-            />
+            {mountVideo ? (
+              <video
+                ref={videoRef}
+                src="/Nigela Testi Chris.mp4"
+                className="w-full h-full object-cover"
+                playsInline
+                muted
+                preload="metadata"
+                onLoadedMetadata={handleLoadedMetadata}
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-white/[0.04] to-white/[0.02]" />
+            )}
 
             {/* gradient overlay */}
             <div

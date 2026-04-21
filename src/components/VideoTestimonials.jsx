@@ -187,6 +187,16 @@ export default function VideoTestimonials() {
   const trackRef    = useRef(null);
   const [active, setActive] = useState(0);
   const activeRef   = useRef(0);
+  // On mobile, mount only the active video; iOS Safari runs out of H.264
+  // decoders fast. Desktop keeps the active card plus its two neighbors.
+  const [neighborWindow, setNeighborWindow] = useState(1);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px), (hover: none) and (pointer: coarse)');
+    const update = () => setNeighborWindow(mq.matches ? 0 : 1);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
 
   // drag state (all refs – no re-render during drag)
   const dragStartX  = useRef(null);
@@ -347,7 +357,7 @@ export default function VideoTestimonials() {
               brand={v.brand}
               src={v.src}
               isCenter={i === active}
-              isNear={Math.abs(i - active) <= 1}
+              isNear={Math.abs(i - active) <= neighborWindow}
               onSelect={() => goTo(i)}
             />
           ))}
