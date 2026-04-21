@@ -21,8 +21,8 @@ const pains = [
   { Icon: Lightbulb,    label: 'Kein Know-How, welche Formate funktionieren' },
 ];
 
-/* Sparkline — descending ROAS */
-const sparkPoints = [0.92, 0.85, 0.78, 0.82, 0.70, 0.60, 0.55, 0.48, 0.38, 0.30, 0.22, 0.18];
+/* Sparkline — descending ROAS, with realistic volatile zigzag */
+const sparkPoints = [0.94, 0.78, 0.88, 0.62, 0.82, 0.55, 0.72, 0.40, 0.62, 0.30, 0.48, 0.22, 0.38, 0.15, 0.28, 0.10];
 const W = 320, H = 120, PAD = 12;
 function buildPath(pts) {
   return pts.map((v, i) => {
@@ -81,6 +81,7 @@ export default function PainPoints() {
   const container    = useRef(null);
   const chartLineRef = useRef(null);
   const chartAreaRef = useRef(null);
+  const chartDotRef  = useRef(null);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -148,36 +149,73 @@ export default function PainPoints() {
           scrollTrigger: { trigger: '.pp-dashboard', start: 'top 80%' } }
       );
 
-      /* 6. Chart line draws itself, then flows continuously */
+      /* 6. Chart line draws as user scrolls; once dot arrives, marching kicks in */
       if (chartLineRef.current) {
-        const len = chartLineRef.current.getTotalLength();
-        gsap.set(chartLineRef.current, { strokeDasharray: len, strokeDashoffset: len });
-        gsap.to(chartLineRef.current, {
-          strokeDashoffset: 0, duration: 1.8, ease: 'power2.inOut',
-          scrollTrigger: { trigger: '.pp-dashboard', start: 'top 78%' },
-          onComplete: () => {
-            // switch to marching-dash pattern so the line has continuous movement
-            gsap.set(chartLineRef.current, { strokeDasharray: '10 6' });
-            gsap.to(chartLineRef.current, {
-              strokeDashoffset: -160,
-              duration: 4,
-              ease: 'none',
-              repeat: -1,
-            });
+        const line = chartLineRef.current;
+        const dot  = chartDotRef.current;
+        const len  = line.getTotalLength();
+        gsap.set(line, { strokeDasharray: len, strokeDashoffset: len });
+
+        if (dot) {
+          const start = line.getPointAtLength(0);
+          dot.setAttribute('cx', start.x);
+          dot.setAttribute('cy', start.y);
+        }
+
+        let marchTween = null;
+
+        const startMarching = () => {
+          if (marchTween) return;
+          gsap.set(line, { strokeDasharray: '10 6', strokeDashoffset: 0 });
+          marchTween = gsap.to(line, {
+            strokeDashoffset: -160, duration: 4, ease: 'none', repeat: -1,
+          });
+          if (dot) {
+            const end = line.getPointAtLength(len);
+            dot.setAttribute('cx', end.x);
+            dot.setAttribute('cy', end.y);
+          }
+        };
+
+        const stopMarching = () => {
+          if (!marchTween) return;
+          marchTween.kill();
+          marchTween = null;
+          gsap.set(line, { strokeDasharray: len });
+        };
+
+        ScrollTrigger.create({
+          trigger: '.pp-dashboard',
+          start: 'top 75%',
+          end: 'bottom 55%',
+          scrub: 0.6,
+          onUpdate: (self) => {
+            if (marchTween) return; // marching mode owns the line + dot
+            gsap.set(line, { strokeDashoffset: len * (1 - self.progress) });
+            if (dot) {
+              const p = line.getPointAtLength(len * self.progress);
+              dot.setAttribute('cx', p.x);
+              dot.setAttribute('cy', p.y);
+            }
           },
+          onLeave:     startMarching,
+          onEnterBack: stopMarching,
         });
       }
 
-      // Pulsing end-point dot — keeps the line feeling alive
-      gsap.to('.pp-chart-dot', {
-        scale: 1.6,
-        opacity: 0.2,
-        duration: 1.1,
-        ease: 'power1.out',
-        repeat: -1,
-        yoyo: true,
-        transformOrigin: 'center',
-      });
+      // Pulsing end-point dot — keeps the line feeling alive.
+      // Animate the SVG `r` attribute directly so it stays co-located
+      // with the cx/cy updates driven by scroll.
+      if (chartDotRef.current) {
+        gsap.to(chartDotRef.current, {
+          attr: { r: 8 },
+          opacity: 0.45,
+          duration: 1.1,
+          ease: 'power1.out',
+          repeat: -1,
+          yoyo: true,
+        });
+      }
       if (chartAreaRef.current) {
         gsap.fromTo(chartAreaRef.current,
           { opacity: 0 },
@@ -449,7 +487,7 @@ export default function PainPoints() {
                   <path ref={chartAreaRef} d={areaPath} fill="url(#pp-areaGrad)" opacity="0" />
 
                   {/* Soft glow halo */}
-                  <path d={linePath} stroke={`rgba(${DANGER_RGB},0.35)`} strokeWidth="8" fill="none" strokeLinecap="round" filter="url(#pp-glow)" />
+                  <path d={linePath} stroke={`rgba(${DANGER_RGB},0.35)`} strokeWidth="8" fill="none" strokeLinecap="round" strokeLinejoin="miter" filter="url(#pp-glow)" />
 
                   {/* Main line — red, with marching dashes animated via GSAP */}
                   <path
@@ -459,15 +497,16 @@ export default function PainPoints() {
                     strokeWidth="3"
                     fill="none"
                     strokeLinecap="round"
-                    strokeLinejoin="round"
+                    strokeLinejoin="miter"
                     style={{ filter: `drop-shadow(0 0 4px ${DANGER})` }}
                   />
 
-                  {/* End-point dot — pulsing */}
+                  {/* End-point dot — pulses + rides along the line as it draws */}
                   <circle
+                    ref={chartDotRef}
                     className="pp-chart-dot"
-                    cx={(PAD + (W - PAD * 2)).toFixed(1)}
-                    cy={(PAD + (1 - sparkPoints.at(-1)) * (H - PAD * 2)).toFixed(1)}
+                    cx={PAD}
+                    cy={(PAD + (1 - sparkPoints[0]) * (H - PAD * 2)).toFixed(1)}
                     r="5"
                     fill={DANGER}
                     style={{ filter: `drop-shadow(0 0 8px ${DANGER})` }}
