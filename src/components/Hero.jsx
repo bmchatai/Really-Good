@@ -31,6 +31,27 @@ import MagneticButton from './MagneticButton';
 
 export default function Hero() {
   const container = useRef(null);
+  const heroVideoRef = useRef(null);
+
+  // Pause the iPhone-mockup video when the hero scrolls out of view so it
+  // stops chewing up the H.264 decoder + memory while the user reads further
+  // sections. Restart on re-entry.
+  useLayoutEffect(() => {
+    const vid = heroVideoRef.current;
+    if (!vid || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          vid.play().catch(() => { /* ignore autoplay rejection */ });
+        } else {
+          vid.pause();
+        }
+      },
+      { threshold: 0.05 }
+    );
+    io.observe(vid);
+    return () => io.disconnect();
+  }, []);
 
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
@@ -178,12 +199,13 @@ export default function Hero() {
                 {/* Screen */}
                 <div className="absolute inset-[5px] sm:inset-[7px] bg-black rounded-[2.2rem] sm:rounded-[2.5rem] overflow-hidden z-10">
                   <video
+                    ref={heroVideoRef}
                     className="absolute inset-0 w-full h-full object-cover"
                     autoPlay
                     loop
                     muted
                     playsInline
-                    preload="auto"
+                    preload="metadata"
                   >
                     <source src="/Wir sind Reelygood.mp4" type="video/mp4" />
                   </video>

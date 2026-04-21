@@ -45,6 +45,7 @@ function BrightWord({ text, delay = 0 }) {
   const wordRefs = useRef([]);
 
   useEffect(() => {
+    const isMobile = window.matchMedia('(max-width: 768px), (hover: none) and (pointer: coarse)').matches;
     wordRefs.current.forEach((el, i) => {
       if (!el) return;
       gsap.fromTo(
@@ -53,7 +54,10 @@ function BrightWord({ text, delay = 0 }) {
         {
           color: 'rgba(255,255,255,0.9)',
           ease: 'none',
-          scrollTrigger: { trigger: el, start: 'top 88%', end: 'top 52%', scrub: 0.6 },
+          duration: isMobile ? 0.35 : undefined,
+          scrollTrigger: isMobile
+            ? { trigger: el, start: 'top 88%', toggleActions: 'play none none none' }
+            : { trigger: el, start: 'top 88%', end: 'top 52%', scrub: 0.6 },
           delay: delay + i * 0.04,
         }
       );
@@ -84,6 +88,7 @@ export default function PainPoints() {
   const chartDotRef  = useRef(null);
 
   useEffect(() => {
+    const isMobile = window.matchMedia('(max-width: 768px), (hover: none) and (pointer: coarse)').matches;
     const ctx = gsap.context(() => {
 
       /* 1. Heading chars roll in */
@@ -109,7 +114,7 @@ export default function PainPoints() {
 
       /* 4. Quote: SplitText word-by-word scroll brightening */
       const split = new SplitText('.pp-quote-body', { type: 'words' });
-      split.words.forEach((word) => {
+      split.words.forEach((word, idx) => {
         // Teal words stay teal; normal words go white
         const isTeal = word.classList.contains('pp-teal');
         gsap.fromTo(word,
@@ -118,12 +123,11 @@ export default function PainPoints() {
             opacity: 1,
             color: isTeal ? ACCENT : '#ffffff',
             ease: 'none',
-            scrollTrigger: {
-              trigger: word,
-              start: 'top 90%',
-              end:   'top 52%',
-              scrub: 0.7,
-            },
+            duration: isMobile ? 0.35 : undefined,
+            delay: isMobile ? idx * 0.02 : 0,
+            scrollTrigger: isMobile
+              ? { trigger: '.pp-quote', start: 'top 80%', toggleActions: 'play none none none' }
+              : { trigger: word, start: 'top 90%', end: 'top 52%', scrub: 0.7 },
           }
         );
       });
@@ -184,23 +188,51 @@ export default function PainPoints() {
           gsap.set(line, { strokeDasharray: len });
         };
 
-        ScrollTrigger.create({
-          trigger: '.pp-dashboard',
-          start: 'top 75%',
-          end: 'bottom 55%',
-          scrub: 0.6,
-          onUpdate: (self) => {
-            if (marchTween) return; // marching mode owns the line + dot
-            gsap.set(line, { strokeDashoffset: len * (1 - self.progress) });
-            if (dot) {
-              const p = line.getPointAtLength(len * self.progress);
-              dot.setAttribute('cx', p.x);
-              dot.setAttribute('cy', p.y);
-            }
-          },
-          onLeave:     startMarching,
-          onEnterBack: stopMarching,
-        });
+        if (isMobile) {
+          // On mobile, scrubbing getPointAtLength on every frame stalls iOS
+          // Safari. Draw the line once when the chart enters view, then
+          // start marching so the user still gets the live-line effect.
+          ScrollTrigger.create({
+            trigger: '.pp-dashboard',
+            start: 'top 80%',
+            once: true,
+            onEnter: () => {
+              const proxy = { p: 0 };
+              gsap.to(proxy, {
+                p: 1,
+                duration: 1.6,
+                ease: 'power2.out',
+                onUpdate() {
+                  gsap.set(line, { strokeDashoffset: len * (1 - proxy.p) });
+                  if (dot) {
+                    const pt = line.getPointAtLength(len * proxy.p);
+                    dot.setAttribute('cx', pt.x);
+                    dot.setAttribute('cy', pt.y);
+                  }
+                },
+                onComplete: startMarching,
+              });
+            },
+          });
+        } else {
+          ScrollTrigger.create({
+            trigger: '.pp-dashboard',
+            start: 'top 75%',
+            end: 'bottom 55%',
+            scrub: 0.6,
+            onUpdate: (self) => {
+              if (marchTween) return; // marching mode owns the line + dot
+              gsap.set(line, { strokeDashoffset: len * (1 - self.progress) });
+              if (dot) {
+                const p = line.getPointAtLength(len * self.progress);
+                dot.setAttribute('cx', p.x);
+                dot.setAttribute('cy', p.y);
+              }
+            },
+            onLeave:     startMarching,
+            onEnterBack: stopMarching,
+          });
+        }
       }
 
       // Pulsing end-point dot — keeps the line feeling alive.
