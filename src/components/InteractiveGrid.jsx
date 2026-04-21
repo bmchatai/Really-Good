@@ -6,9 +6,15 @@ export default function InteractiveGrid() {
 
   const handlePointerMove = (e) => {
     if (!glowRef.current) return;
-    
-    // Direct DOM manipulation prevents continuous React re-renders which cause performance glitches / lagging
-    const maskStr = `radial-gradient(circle 400px at ${e.nativeEvent.offsetX}px ${e.nativeEvent.offsetY}px, black 0%, transparent 100%)`;
+    // +100 compensates for the inner div's top: -100px offset
+    const maskStr = `radial-gradient(circle 400px at ${e.nativeEvent.offsetX}px ${e.nativeEvent.offsetY + 100}px, black 0%, transparent 100%)`;
+    glowRef.current.style.WebkitMaskImage = maskStr;
+    glowRef.current.style.maskImage = maskStr;
+  };
+
+  const handlePointerLeave = () => {
+    if (!glowRef.current) return;
+    const maskStr = `radial-gradient(circle 400px at -1000px -1000px, black 0%, transparent 100%)`;
     glowRef.current.style.WebkitMaskImage = maskStr;
     glowRef.current.style.maskImage = maskStr;
   };
@@ -25,71 +31,74 @@ export default function InteractiveGrid() {
       <div 
         ref={floorRef}
         onMouseMove={handlePointerMove}
+        onMouseLeave={handlePointerLeave}
         className="absolute left-1/2 top-[35%] w-[300vw] h-[150vh] origin-top cursor-crosshair"
         style={{
           transform: 'translateX(-50%) rotateX(75deg) translateZ(0)',
           // Removed preserve-3d to stop extreme geometric/Z-fighting GPU glitches across devices
         }}
       >
-        {/* Base Grid - Prominent turquoise lines and forward movement */}
-        <div 
-          className="absolute inset-0 pointer-events-none grid-forward-animation"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(47, 215, 191, 0.4) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(47, 215, 191, 0.4) 1px, transparent 1px)
-            `,
-            backgroundSize: '100px 100px',
-            backgroundPosition: '0 0',
-            filter: 'drop-shadow(0 0 2px rgba(47,215,191,0.3))'
-          }}
-        ></div>
-        
-        {/* Glowing Dots at line intersections */}
-        <div 
-          className="absolute inset-0 pointer-events-none grid-dots-animation mix-blend-screen opacity-50"
-          style={{
-            backgroundImage: `radial-gradient(circle at 1px 1px, rgba(47, 215, 191, 1) 2px, transparent 3px)`,
-            backgroundSize: '100px 100px',
-            backgroundPosition: '0 0',
-          }}
-        ></div>
-        
-        {/* Interactive Glowing Grid - Revealed by Mouse Mask */}
-        <div 
-          ref={glowRef}
-          className="absolute inset-0 pointer-events-none transition-opacity duration-300 grid-forward-animation"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(47, 215, 191, 1) 2px, transparent 2px),
-              linear-gradient(90deg, rgba(47, 215, 191, 1) 2px, transparent 2px)
-            `,
-            backgroundSize: '100px 100px',
-            backgroundPosition: '0 0',
-            // Pre-position mask away
-            WebkitMaskImage: `radial-gradient(circle 400px at -1000px -1000px, black 0%, transparent 100%)`,
-            maskImage: `radial-gradient(circle 400px at -1000px -1000px, black 0%, transparent 100%)`,
-            filter: 'drop-shadow(0 0 16px rgba(47, 215, 191, 1))'
-          }}
-        ></div>
+        {/* Base Grid - uses transform-based animation (GPU-composited, no repaint) */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div
+            className="absolute w-full grid-forward-animation"
+            style={{
+              top: '-100px',
+              height: 'calc(100% + 100px)',
+              backgroundImage: `
+                linear-gradient(rgba(47, 215, 191, 0.4) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(47, 215, 191, 0.4) 1px, transparent 1px)
+              `,
+              backgroundSize: '100px 100px',
+              willChange: 'transform',
+            }}
+          ></div>
+        </div>
 
-        {/* Floating dust particles / light specs */}
-        <div className="absolute inset-0 pointer-events-none opacity-30 mix-blend-screen"
-             style={{
-               backgroundImage: `radial-gradient(circle, rgba(47,215,191,0.8) 1.5px, transparent 2px)`,
-               backgroundSize: '250px 250px',
-               animation: 'dust 15s linear infinite'
-             }}
-        ></div>
-        
-        {/* Scanline Effect sweeping across the grid */}
-        <div className="absolute inset-0 h-[200%] w-full pointer-events-none moving-scanline mix-blend-screen"
-             style={{
-               background: 'linear-gradient(to bottom, transparent 0%, rgba(47,215,191,0.15) 50%, transparent 100%)',
-               backgroundSize: '100% 20%',
-               animation: 'scanline 8s linear infinite'
-             }}
-        ></div>
+        {/* Glowing Dots at line intersections */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-50">
+          <div
+            className="absolute w-full grid-dots-animation"
+            style={{
+              top: '-100px',
+              height: 'calc(100% + 100px)',
+              backgroundImage: `radial-gradient(circle at 1px 1px, rgba(47, 215, 191, 1) 2px, transparent 3px)`,
+              backgroundSize: '100px 100px',
+              willChange: 'transform',
+            }}
+          ></div>
+        </div>
+
+        {/* Interactive Glowing Grid - Revealed by Mouse Mask */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div
+            ref={glowRef}
+            className="absolute w-full grid-forward-animation"
+            style={{
+              top: '-100px',
+              height: 'calc(100% + 100px)',
+              backgroundImage: `
+                linear-gradient(rgba(47, 215, 191, 1) 2px, transparent 2px),
+                linear-gradient(90deg, rgba(47, 215, 191, 1) 2px, transparent 2px)
+              `,
+              backgroundSize: '100px 100px',
+              WebkitMaskImage: `radial-gradient(circle 400px at -1000px -1000px, black 0%, transparent 100%)`,
+              maskImage: `radial-gradient(circle 400px at -1000px -1000px, black 0%, transparent 100%)`,
+              willChange: 'transform',
+            }}
+          ></div>
+        </div>
+
+        {/* Scanline Effect - transform-based (GPU-composited) */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div
+            className="absolute w-full h-[200%] moving-scanline"
+            style={{
+              background: 'linear-gradient(to bottom, transparent 0%, rgba(47,215,191,0.12) 50%, transparent 100%)',
+              willChange: 'transform',
+            }}
+          ></div>
+        </div>
       </div>
       
       {/* Vignette - Fades grid out at the edges and horizon */}
@@ -105,16 +114,15 @@ export default function InteractiveGrid() {
           animation: gridForward 4s linear infinite;
         }
         @keyframes gridForward {
-          0% { background-position: 0px 0px; }
-          100% { background-position: 0px 100px; }
-        }
-        @keyframes dust {
-          0% { background-position: 0px 0px; }
-          100% { background-position: 250px 250px; }
+          0%   { transform: translateY(0px); }
+          100% { transform: translateY(100px); }
         }
         @keyframes scanline {
-          0% { transform: translateY(-100%); }
-          100% { transform: translateY(50%); }
+          0%   { transform: translateY(-50%); }
+          100% { transform: translateY(0%); }
+        }
+        .moving-scanline {
+          animation: scanline 8s linear infinite;
         }
       `}</style>
     </div>

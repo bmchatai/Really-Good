@@ -26,6 +26,10 @@ interface HighlighterProps {
   multiline?: boolean
   isView?: boolean
   className?: string
+  /** Re-runs the draw animation in a loop. Interval is measured from animation start. */
+  loop?: boolean
+  /** Milliseconds between loop restarts (default 2500ms after the animation completes). */
+  loopDelay?: number
 }
 
 export function Highlighter({
@@ -39,6 +43,8 @@ export function Highlighter({
   multiline = true,
   isView = false,
   className = "",
+  loop = false,
+  loopDelay = 2500,
 }: HighlighterProps) {
   const elementRef = useRef<HTMLSpanElement>(null)
 
@@ -54,6 +60,7 @@ export function Highlighter({
     const element = elementRef.current
     let annotation: RoughAnnotation | null = null
     let resizeObserver: ResizeObserver | null = null
+    let loopTimer: ReturnType<typeof setTimeout> | null = null
 
     if (shouldShow && element) {
       const annotationConfig = {
@@ -70,6 +77,17 @@ export function Highlighter({
       annotation = currentAnnotation
       currentAnnotation.show()
 
+      if (loop) {
+        const scheduleRedraw = () => {
+          loopTimer = setTimeout(() => {
+            currentAnnotation.hide()
+            currentAnnotation.show()
+            scheduleRedraw()
+          }, animationDuration + loopDelay)
+        }
+        scheduleRedraw()
+      }
+
       resizeObserver = new ResizeObserver(() => {
         currentAnnotation.hide()
         currentAnnotation.show()
@@ -80,6 +98,7 @@ export function Highlighter({
     }
 
     return () => {
+      if (loopTimer) clearTimeout(loopTimer)
       annotation?.remove()
       if (resizeObserver) {
         resizeObserver.disconnect()
@@ -94,6 +113,8 @@ export function Highlighter({
     iterations,
     padding,
     multiline,
+    loop,
+    loopDelay,
   ])
 
   return (

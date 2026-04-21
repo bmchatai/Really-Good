@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import gsap from 'gsap';
 import { Plus, Minus } from 'lucide-react';
+import AnimatedBackground from './AnimatedBackground';
 
 const faqs = [
   {
@@ -27,8 +28,9 @@ const faqs = [
 
 export default function FAQ() {
   return (
-    <section id="faq" className="py-16 md:py-32 px-4 bg-black w-full flex flex-col items-center">
-      <div className="max-w-3xl w-full">
+    <section id="faq" className="relative py-16 md:py-32 px-4 bg-black w-full flex flex-col items-center overflow-hidden">
+      <AnimatedBackground />
+      <div className="max-w-3xl w-full relative z-10">
         <div className="text-center mb-10 md:mb-20 relative">
           <h2 className="font-druk text-4xl md:text-5xl uppercase tracking-[-0.02em] inline-block relative">
             Häufig Gestellte Fragen

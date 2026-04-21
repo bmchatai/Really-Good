@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.vercel
+
+# Local backups and large downloads — don't commit
+*.bak
+public/drive-download-*.zip

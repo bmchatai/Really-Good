@@ -1,3 +1,5 @@
+@import 'lenis/dist/lenis.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -32,7 +34,7 @@
 
   body {
     font-family: "Inter", sans-serif;
-    scroll-behavior: smooth;
+
     background-color: var(--black);
     color: var(--text-primary);
     -webkit-font-smoothing: antialiased;
@@ -96,5 +98,25 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+
+  /* Red CTA button pulse glow */
+  @keyframes redButtonGlow {
+    0%, 100% {
+      box-shadow:
+        0 0 18px rgba(230, 50, 28, 0.35),
+        0 0 40px rgba(230, 50, 28, 0.15),
+        0 0 0px rgba(230, 50, 28, 0);
+    }
+    50% {
+      box-shadow:
+        0 0 30px rgba(230, 50, 28, 0.7),
+        0 0 70px rgba(230, 50, 28, 0.4),
+        0 0 110px rgba(230, 50, 28, 0.15);
+    }
+  }
+
+  .btn-red-glow {
+    animation: redButtonGlow 2s ease-in-out infinite;
   }
 }

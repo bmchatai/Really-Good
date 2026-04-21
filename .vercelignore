@@ -1,0 +1,2 @@
+# All videos are now compressed and under Vercel's 100MB file limit.
+# Leave this file empty so videos ship with the deploy.
