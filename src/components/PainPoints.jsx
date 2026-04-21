@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
@@ -86,6 +86,15 @@ export default function PainPoints() {
   const chartLineRef = useRef(null);
   const chartAreaRef = useRef(null);
   const chartDotRef  = useRef(null);
+
+  // Detect mobile up front so render can strip heavy SVG filters that crash
+  // iOS Safari when the line/dot are mutated by GSAP.
+  const [isMobileRender, setIsMobileRender] = useState(false);
+  useEffect(() => {
+    setIsMobileRender(
+      window.matchMedia('(max-width: 768px), (hover: none) and (pointer: coarse)').matches
+    );
+  }, []);
 
   useEffect(() => {
     const isMobile = window.matchMedia('(max-width: 768px), (hover: none) and (pointer: coarse)').matches;
@@ -190,8 +199,9 @@ export default function PainPoints() {
 
         if (isMobile) {
           // On mobile, scrubbing getPointAtLength on every frame stalls iOS
-          // Safari. Draw the line once when the chart enters view, then
-          // start marching so the user still gets the live-line effect.
+          // Safari and the dashboard section was crashing the tab. Draw the
+          // line once on enter and stop — no marching, no infinite tweens
+          // mutating filtered SVG nodes.
           ScrollTrigger.create({
             trigger: '.pp-dashboard',
             start: 'top 80%',
@@ -210,7 +220,6 @@ export default function PainPoints() {
                     dot.setAttribute('cy', pt.y);
                   }
                 },
-                onComplete: startMarching,
               });
             },
           });
@@ -235,10 +244,9 @@ export default function PainPoints() {
         }
       }
 
-      // Pulsing end-point dot — keeps the line feeling alive.
-      // Animate the SVG `r` attribute directly so it stays co-located
-      // with the cx/cy updates driven by scroll.
-      if (chartDotRef.current) {
+      // Pulsing end-point dot — desktop only. On mobile the infinite tween
+      // mutating a filtered SVG node was a crash vector.
+      if (chartDotRef.current && !isMobile) {
         gsap.to(chartDotRef.current, {
           attr: { r: 8 },
           opacity: 0.45,
@@ -268,12 +276,14 @@ export default function PainPoints() {
         });
       });
 
-      /* 8. Pulsing rings */
-      gsap.to('.pp-ring', {
-        scale: 2.2, opacity: 0, duration: 1.6,
-        repeat: -1, ease: 'power1.out',
-        stagger: { each: 0.5, repeat: -1 },
-      });
+      /* 8. Pulsing rings — desktop only */
+      if (!isMobile) {
+        gsap.to('.pp-ring', {
+          scale: 2.2, opacity: 0, duration: 1.6,
+          repeat: -1, ease: 'power1.out',
+          stagger: { each: 0.5, repeat: -1 },
+        });
+      }
 
     }, container);
 
@@ -505,10 +515,12 @@ export default function PainPoints() {
                       <stop offset="60%"  stopColor={DANGER} stopOpacity="0.85" />
                       <stop offset="100%" stopColor={DANGER} stopOpacity="0.75" />
                     </linearGradient>
-                    <filter id="pp-glow">
-                      <feGaussianBlur stdDeviation="2.5" result="blur" />
-                      <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                    </filter>
+                    {!isMobileRender && (
+                      <filter id="pp-glow">
+                        <feGaussianBlur stdDeviation="2.5" result="blur" />
+                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                      </filter>
+                    )}
                   </defs>
 
                   {[0.25, 0.5, 0.75].map((v, i) => {
@@ -518,8 +530,10 @@ export default function PainPoints() {
 
                   <path ref={chartAreaRef} d={areaPath} fill="url(#pp-areaGrad)" opacity="0" />
 
-                  {/* Soft glow halo */}
-                  <path d={linePath} stroke={`rgba(${DANGER_RGB},0.35)`} strokeWidth="8" fill="none" strokeLinecap="round" strokeLinejoin="miter" filter="url(#pp-glow)" />
+                  {/* Soft glow halo — desktop only (feGaussianBlur kills iOS Safari) */}
+                  {!isMobileRender && (
+                    <path d={linePath} stroke={`rgba(${DANGER_RGB},0.35)`} strokeWidth="8" fill="none" strokeLinecap="round" strokeLinejoin="miter" filter="url(#pp-glow)" />
+                  )}
 
                   {/* Main line — red, with marching dashes animated via GSAP */}
                   <path
@@ -530,7 +544,7 @@ export default function PainPoints() {
                     fill="none"
                     strokeLinecap="round"
                     strokeLinejoin="miter"
-                    style={{ filter: `drop-shadow(0 0 4px ${DANGER})` }}
+                    style={isMobileRender ? undefined : { filter: `drop-shadow(0 0 4px ${DANGER})` }}
                   />
 
                   {/* End-point dot — pulses + rides along the line as it draws */}
@@ -541,7 +555,7 @@ export default function PainPoints() {
                     cy={(PAD + (1 - sparkPoints[0]) * (H - PAD * 2)).toFixed(1)}
                     r="5"
                     fill={DANGER}
-                    style={{ filter: `drop-shadow(0 0 8px ${DANGER})` }}
+                    style={isMobileRender ? undefined : { filter: `drop-shadow(0 0 8px ${DANGER})` }}
                   />
                 </svg>
               </div>
