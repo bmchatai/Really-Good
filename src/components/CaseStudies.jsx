@@ -17,13 +17,6 @@ export default function CaseStudies() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // SVG path
-      gsap.fromTo('#growth-path',
-        { strokeDasharray: 500, strokeDashoffset: 500 },
-        { strokeDashoffset: 0, duration: 2.5, ease: 'power2.inOut',
-          scrollTrigger: { trigger: '.svg-container', start: 'top 80%' } }
-      );
-
       // Stat rows slide in from left
       gsap.fromTo('.stat-row',
         { opacity: 0, x: -20 },

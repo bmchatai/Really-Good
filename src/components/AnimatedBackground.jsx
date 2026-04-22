@@ -8,7 +8,13 @@ export default function AnimatedBackground({ variant = 'default' }) {
 
   // Detect touch/mobile so we can render a slimmer, GPU-cheaper version.
   // Mobile gets fewer particles, smaller blurs, no rotating conic gradient.
-  const [isMobile, setIsMobile] = useState(false);
+  // Initialised synchronously so the first paint already matches the device —
+  // otherwise 9 sections briefly mount the desktop layout, then unmount it,
+  // which spikes memory hard enough to crash mobile Safari.
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return false;
+    return window.matchMedia('(max-width: 768px), (hover: none) and (pointer: coarse)').matches;
+  });
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 768px), (hover: none) and (pointer: coarse)');
     const update = () => setIsMobile(mq.matches);
@@ -20,7 +26,8 @@ export default function AnimatedBackground({ variant = 'default' }) {
   // Only render heavy animations when the section is actually on screen.
   // Ten sections each running infinite CSS animations simultaneously tanks
   // the GPU on mobile Safari — IntersectionObserver unmounts the animation
-  // layer when the user scrolls past.
+  // layer when the user scrolls past. On mobile we use rootMargin: 0 so at
+  // most one section's background is mounted at a time.
   const [visible, setVisible] = useState(false);
   useEffect(() => {
     const el = rootRef.current;
@@ -30,11 +37,11 @@ export default function AnimatedBackground({ variant = 'default' }) {
     }
     const io = new IntersectionObserver(
       ([entry]) => setVisible(entry.isIntersecting),
-      { rootMargin: '200px 0px' }
+      { rootMargin: isMobile ? '0px' : '200px 0px' }
     );
     io.observe(el);
     return () => io.disconnect();
-  }, []);
+  }, [isMobile]);
 
   const particleCount = isMobile ? 8 : 28;
   const streakCount   = isMobile ? 1 : 4;

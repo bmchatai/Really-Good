@@ -189,7 +189,11 @@ export default function VideoTestimonials() {
   const activeRef   = useRef(0);
   // On mobile, mount only the active video; iOS Safari runs out of H.264
   // decoders fast. Desktop keeps the active card plus its two neighbors.
-  const [neighborWindow, setNeighborWindow] = useState(1);
+  // Initialised synchronously so we never briefly mount 3 videos on mobile.
+  const [neighborWindow, setNeighborWindow] = useState(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return 1;
+    return window.matchMedia('(max-width: 768px), (hover: none) and (pointer: coarse)').matches ? 0 : 1;
+  });
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 768px), (hover: none) and (pointer: coarse)');
     const update = () => setNeighborWindow(mq.matches ? 0 : 1);

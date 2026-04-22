@@ -52,22 +52,34 @@ function Row({ logos, direction = 'left', durationSec = 45, rowId, size = 'md' }
         ease: 'none',
       });
 
+      // Velocity-boost on scroll allocates a fresh tween every frame and
+      // chokes mobile Safari. Desktop only — and even there throttled to
+      // a single in-flight decay tween.
+      const isTouch = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+      if (isTouch) return;
+
+      let decayTween = null;
       const scrollTrigger = ScrollTrigger.create({
         onUpdate: (self) => {
           if (!tweenRef.current) return;
           const velocity = Math.min(Math.abs(self.getVelocity()) / 200, 8);
           const boost = 1 + velocity;
           tweenRef.current.timeScale(boost);
-          gsap.to(tweenRef.current, {
+          if (decayTween) return;
+          decayTween = gsap.to(tweenRef.current, {
             timeScale: 1,
             duration: 0.9,
             ease: 'power2.out',
             overwrite: true,
+            onComplete: () => { decayTween = null; },
           });
         },
       });
 
-      return () => scrollTrigger.kill();
+      return () => {
+        scrollTrigger.kill();
+        decayTween?.kill();
+      };
     }, marqueeRef);
     return () => ctx.revert();
   }, [direction, durationSec, rowId]);

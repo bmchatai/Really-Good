@@ -1,8 +1,33 @@
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function InteractiveGrid() {
   const floorRef = useRef(null);
   const glowRef = useRef(null);
+
+  // Mobile gets a static gradient instead of a 300vw × 150vh perspective floor
+  // with four animated grid layers — that whole thing rasters a huge area
+  // every frame and the pointer-mask is dead code on touch devices.
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return false;
+    return window.matchMedia('(max-width: 768px), (hover: none) and (pointer: coarse)').matches;
+  });
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(max-width: 768px), (hover: none) and (pointer: coarse)');
+    const update = () => setIsMobile(mq.matches);
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+
+  if (isMobile) {
+    return (
+      <div className="absolute inset-0 z-0 overflow-hidden bg-black pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(47,215,191,0.18),transparent_60%)]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black opacity-80" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,#000000_100%)] opacity-90" />
+      </div>
+    );
+  }
 
   const handlePointerMove = (e) => {
     if (!glowRef.current) return;

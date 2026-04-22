@@ -119,4 +119,16 @@
   .btn-red-glow {
     animation: redButtonGlow 2s ease-in-out infinite;
   }
+
+  /* Animating a 110px box-shadow forces the GPU to repaint a large area per
+     frame on every red CTA button. With 6 buttons on the page this kills
+     mobile Safari, so we swap to a single static shadow on touch devices. */
+  @media (max-width: 768px), (hover: none) and (pointer: coarse) {
+    .btn-red-glow {
+      animation: none;
+      box-shadow:
+        0 0 18px rgba(230, 50, 28, 0.35),
+        0 0 40px rgba(230, 50, 28, 0.15);
+    }
+  }
 }

@@ -170,6 +170,13 @@ function VerticalFlowConnector({ pathRef, arrowRef }) {
 /*  Decorative floating particles                                             */
 /* -------------------------------------------------------------------------- */
 function FloatingParticles() {
+  // Skip entirely on mobile — 12 always-running GSAP infinite tweens +
+  // CSS animations were a mobile crash vector with no visual payoff.
+  if (typeof window !== 'undefined' && window.matchMedia &&
+      window.matchMedia('(max-width: 768px), (hover: none) and (pointer: coarse)').matches) {
+    return null;
+  }
+
   const particles = Array.from({ length: 12 }, (_, i) => ({
     id: i,
     x: Math.random() * 100,

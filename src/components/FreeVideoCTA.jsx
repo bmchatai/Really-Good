@@ -33,7 +33,7 @@ export default function FreeVideoCTA() {
           stagger: 0.07,
           ease: 'back.out(2)',
           scrollTrigger: {
-            trigger: '.freevideo-section',
+            trigger: container.current,
             start: 'top 75%',
           }
         }
@@ -49,7 +49,7 @@ export default function FreeVideoCTA() {
           duration: 0.6,
           ease: 'power2.out',
           scrollTrigger: {
-            trigger: '.freevideo-section',
+            trigger: container.current,
             start: 'top 75%',
           },
           delay: 0.4,
