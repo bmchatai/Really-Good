@@ -18,20 +18,18 @@ const BIG_BRANDS = [
 ];
 
 const REST = [
-  "Adbaker.png",
   "Afh.png",
+  "afhgrau.png",
   "Bolt.png",
   "Celv.png",
   "Cologne Watch.png",
   "Doo automation.png",
   "ECOMBEAT.png",
-  "Flexx.png",
   "Madame Croissant.png",
   "Matcha Baby.png",
   "Nigela.png",
   "Pace.png",
   "THELUXO.png",
-  "TheCreate.png",
   "dailynature.png",
   "milveo.png",
 ];
@@ -42,13 +40,16 @@ function Row({ logos, direction = 'left', durationSec = 45, rowId, size = 'md' }
 
   useEffect(() => {
     const ctx = gsap.context(() => {
+      // Faster scroll on mobile — shortens perceived dead time on small screens
+      const isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+      const effectiveDuration = isTouchDevice ? durationSec * 0.65 : durationSec;
       const from = direction === 'left' ? 0 : -33.333333;
       const to   = direction === 'left' ? -33.333333 : 0;
       gsap.set(`.${rowId}`, { xPercent: from });
       tweenRef.current = gsap.to(`.${rowId}`, {
         xPercent: to,
         repeat: -1,
-        duration: durationSec,
+        duration: effectiveDuration,
         ease: 'none',
       });
 
@@ -85,8 +86,8 @@ function Row({ logos, direction = 'left', durationSec = 45, rowId, size = 'md' }
   }, [direction, durationSec, rowId]);
 
   const sizeCls = size === 'lg'
-    ? 'h-24 sm:h-32 md:h-36 w-56 sm:w-72 md:w-80'
-    : 'h-16 sm:h-20 md:h-24 w-40 sm:w-52 md:w-60';
+    ? 'h-28 sm:h-36 md:h-44 w-64 sm:w-80 md:w-96'
+    : 'h-20 sm:h-24 md:h-28 w-48 sm:w-60 md:w-72';
 
   const content = (
     <div className="flex items-center gap-8 sm:gap-12 md:gap-16 px-4 sm:px-6">
@@ -157,7 +158,7 @@ export default function LogoMarquee({ title = "Brands we work with", hideBorder 
           <span className="font-mono text-[11px] text-white tracking-widest mb-8 sm:mb-10">{title}</span>
         )}
         <div className="w-full pb-8 sm:pb-12">
-          <Row logos={HERO_BRANDS} direction="left" durationSec={40} rowId="logo-marquee-hero" />
+          <Row logos={HERO_BRANDS} direction="left" durationSec={35} rowId="logo-marquee-hero" size="lg" />
         </div>
       </div>
     );

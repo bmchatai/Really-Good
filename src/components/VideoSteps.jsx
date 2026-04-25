@@ -590,7 +590,7 @@ export default function VideoSteps() {
             href="https://form.typeform.com/to/dDmy0xtw"
             target="_blank"
             rel="noreferrer"
-            className="group relative overflow-hidden bg-[#e6321c] text-white font-bold text-base px-8 py-5 min-h-[56px] rounded-full flex items-center justify-center gap-3 hover:scale-105 transition-transform duration-300 btn-red-glow w-full sm:w-auto"
+            className="group relative overflow-hidden bg-[#e6321c] text-white font-bold text-base px-7 py-4 min-h-[52px] rounded-full inline-flex items-center justify-center gap-3 hover:scale-105 transition-transform duration-300 btn-red-glow w-auto"
           >
             <span className="relative z-10 flex items-center gap-2">
               In 30 Sekunden zum Free Video!

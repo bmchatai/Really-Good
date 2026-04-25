@@ -26,7 +26,7 @@ const HEADING_WORDS = 'So sehen unsere Videos aus'.split(' ');
 const CARD_W   = 220; // px – width of each card
 const CARD_GAP = 24;  // px – gap between cards
 
-function VideoCard({ brand, src, isCenter, isNear, onSelect }) {
+function VideoCard({ brand, src, isCenter, isNear, onSelect, suppressClickRef }) {
   const videoRef = useRef(null);
   const [playing, setPlaying] = useState(false);
 
@@ -47,6 +47,14 @@ function VideoCard({ brand, src, isCenter, isNear, onSelect }) {
   }, [isNear]);
 
   const handleClick = (e) => {
+    // If the user just finished dragging the carousel, swallow the trailing
+    // click so the swipe target isn't immediately overridden by the card's
+    // own onSelect (which would snap back to the card under the pointer).
+    if (suppressClickRef?.current) {
+      e.stopPropagation();
+      e.preventDefault();
+      return;
+    }
     e.stopPropagation();
     if (!isCenter) {
       onSelect?.();
@@ -206,6 +214,9 @@ export default function VideoTestimonials() {
   const dragStartX  = useRef(null);
   const dragDelta   = useRef(0);
   const isDragging  = useRef(false);
+  // Set briefly after a real drag so the synthetic click that follows
+  // the pointerup doesn't undo the swipe by re-selecting the original card.
+  const suppressClickRef = useRef(false);
 
   const getBaseX = (idx) =>
     window.innerWidth / 2 - (idx * (CARD_W + CARD_GAP) + CARD_W / 2);
@@ -293,7 +304,14 @@ export default function VideoTestimonials() {
     }
     // Only snap via goTo when we actually dragged — a plain click should
     // let the VideoCard's onClick handle play/select.
-    if (wasDragging) goTo(next);
+    if (wasDragging) {
+      // Swallow the synthetic click the browser fires right after pointerup
+      // from a drag — otherwise the card under the pointer would call
+      // onSelect and snap us back to the starting card.
+      suppressClickRef.current = true;
+      setTimeout(() => { suppressClickRef.current = false; }, 350);
+      goTo(next);
+    }
   };
 
   // scroll-in animations
@@ -363,6 +381,7 @@ export default function VideoTestimonials() {
               isCenter={i === active}
               isNear={Math.abs(i - active) <= neighborWindow}
               onSelect={() => goTo(i)}
+              suppressClickRef={suppressClickRef}
             />
           ))}
         </div>

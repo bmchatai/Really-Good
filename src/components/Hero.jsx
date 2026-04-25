@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { Star } from 'lucide-react';
 import InteractiveGrid from './InteractiveGrid';
+import AnimatedBackground from './AnimatedBackground';
 
 const PHONE_STYLES = `
   .iphone-bezel {
@@ -107,11 +108,17 @@ export default function Hero() {
   };
 
   return (
-    <section ref={container} className="relative w-full min-h-[100dvh] bg-black flex flex-col items-center justify-center pt-20 sm:pt-24 pb-12 px-4">
+    <section ref={container} className="relative w-full min-h-[100dvh] bg-black flex flex-col items-center justify-center pt-36 sm:pt-40 lg:pt-44 pb-12 px-4">
 
       {/* Background InteractiveGrid – fixed to viewport height so it doesn't stretch with content */}
       <div className="absolute inset-x-0 top-0 h-[100dvh] overflow-hidden">
         <InteractiveGrid />
+      </div>
+
+      {/* Animated teal background — covers the scroll content below the first viewport
+          (Bekannt aus / 200+ Brands marquee). Starts where InteractiveGrid ends. */}
+      <div className="pointer-events-none absolute inset-x-0 top-[100dvh] bottom-0 overflow-hidden">
+        <AnimatedBackground />
       </div>
 
       <div className="max-w-6xl w-full flex flex-col items-center text-center z-10 relative pointer-events-none">
@@ -121,7 +128,7 @@ export default function Hero() {
           
           {/* Main Copy */}
           <div className="flex flex-col items-center lg:items-start text-center lg:text-left lg:w-3/5 pointer-events-none">
-            <h1 className="hero-el-header font-druk text-[1.75rem] sm:text-[2rem] md:text-5xl lg:text-[3.5rem] leading-[1.0] lg:leading-[1.1] tracking-[-0.03em] uppercase mb-6 sm:mb-8 text-white pointer-events-auto overflow-hidden">
+            <h1 className="hero-el-header font-druk text-[1.75rem] sm:text-[2rem] md:text-[2.5rem] lg:text-[3rem] leading-[1.0] lg:leading-[1.1] tracking-[-0.03em] uppercase mb-6 sm:mb-8 text-white pointer-events-auto overflow-hidden">
               <span className="inline-block overflow-hidden align-bottom">
                 <Highlighter
                   action="underline"
@@ -162,14 +169,14 @@ export default function Hero() {
             </p>
 
             <div className="hero-el flex flex-col sm:flex-row items-center gap-6 pointer-events-auto">
-              <MagneticButton className="relative group w-full sm:w-auto">
+              <MagneticButton className="relative group w-auto">
                 {/* Glowing Aura behind button */}
                 <div className="absolute inset-0 bg-[#e6321c] rounded-full blur-2xl opacity-40 animate-pulse-glow" />
                 <a
                   href="https://form.typeform.com/to/dDmy0xtw"
                   target="_blank"
                   rel="noreferrer"
-                  className="relative overflow-hidden bg-[#e6321c] text-white font-bold text-sm md:text-base px-8 py-4 min-h-[52px] rounded-full flex items-center gap-3 transition-transform duration-300 will-change-transform btn-red-glow pointer-events-auto w-full sm:w-auto justify-center z-10"
+                  className="relative overflow-hidden bg-[#e6321c] text-white font-bold text-sm md:text-base px-6 sm:px-8 py-3.5 sm:py-4 min-h-[48px] sm:min-h-[52px] rounded-full inline-flex items-center gap-3 transition-transform duration-300 will-change-transform btn-red-glow pointer-events-auto w-auto justify-center z-10"
                 >
                   <span className="relative z-10 text-white">In 30 Sekunden zum Free Video!</span>
                   <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
@@ -246,13 +253,13 @@ export default function Hero() {
         
         {/* CTA direkt unter VSL */}
         <div className="pointer-events-auto w-full flex flex-col sm:flex-row items-center justify-center gap-4 mt-6">
-          <MagneticButton className="relative group w-full sm:w-auto">
+          <MagneticButton className="relative group w-auto">
             <div className="absolute inset-0 bg-[#e6321c] rounded-full blur-2xl opacity-40 animate-pulse-glow" />
             <a
               href="https://form.typeform.com/to/dDmy0xtw"
               target="_blank"
               rel="noreferrer"
-              className="relative overflow-hidden bg-[#e6321c] text-white font-bold text-base md:text-lg px-10 py-4 min-h-[56px] rounded-full flex items-center gap-3 transition-transform duration-300 will-change-transform btn-red-glow w-full sm:w-auto justify-center z-10"
+              className="relative overflow-hidden bg-[#e6321c] text-white font-bold text-base md:text-lg px-8 sm:px-10 py-3.5 sm:py-4 min-h-[52px] sm:min-h-[56px] rounded-full inline-flex items-center gap-3 transition-transform duration-300 will-change-transform btn-red-glow w-auto justify-center z-10"
             >
               <span className="relative z-10 text-white">In 30 Sekunden zum Free Video!</span>
               <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
@@ -278,7 +285,7 @@ export default function Hero() {
                 return (
                   <div
                     key={idx}
-                    className="relative h-12 sm:h-16 md:h-20 lg:h-24 w-32 sm:w-48 md:w-56 mx-auto flex items-center justify-center group transition-transform duration-300 hover:scale-110"
+                    className="relative h-20 sm:h-24 md:h-28 lg:h-32 w-44 sm:w-56 md:w-64 lg:w-72 mx-auto flex items-center justify-center group transition-transform duration-300 hover:scale-110"
                   >
                     {/* Base white image — fades out on hover */}
                     <img

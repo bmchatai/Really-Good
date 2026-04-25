@@ -40,11 +40,11 @@ const testimonials = [
     stars: 5,
   },
   {
-    author: 'SNOCKS',
-    role: 'Creative Team',
-    company: 'SNOCKS GmbH',
-    logo: '/kunden-logos/SNOCKS.png',
-    text: 'ReelyGood liefert genau das, was moderne Performance-Ads brauchen — kreativ, datengetrieben und immer on point.',
+    author: 'THELUXO',
+    role: 'Brand Team',
+    company: 'THELUXO',
+    logo: '/kunden-logos/THELUXO.png',
+    text: 'Die Videos sind nicht einfach „nur" professionell – sie transportieren genau das Gefühl und die Botschaft, die man sich wünscht. Dazu kommt, dass die Zusammenarbeit richtig Spaß macht, weil man sich einfach wohlfühlt.',
     stars: 5,
   },
   {
