@@ -279,13 +279,13 @@ export default function Hero() {
               Bekannt aus
             </span>
             
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:flex lg:flex-row place-items-center justify-items-center lg:justify-center items-center w-full gap-x-8 gap-y-16 sm:gap-16 md:gap-24 opacity-70 hover:opacity-100 transition-opacity duration-500">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:flex lg:flex-row place-items-center justify-items-center lg:justify-center items-center w-full gap-x-3 gap-y-6 sm:gap-16 md:gap-24 opacity-70 hover:opacity-100 transition-opacity duration-500">
               {['welt.png', 'dmax.png', 'sport1.png', 'sky.png', 'n24.png', 'mtv.png'].map((logo, idx) => {
                 const imgUrl = `/bekannt-aus/${logo}`;
                 return (
                   <div
                     key={idx}
-                    className="relative h-20 sm:h-24 md:h-28 lg:h-32 w-44 sm:w-56 md:w-64 lg:w-72 mx-auto flex items-center justify-center group transition-transform duration-300 hover:scale-110"
+                    className="relative h-16 sm:h-24 md:h-28 lg:h-32 w-36 sm:w-56 md:w-64 lg:w-72 mx-auto flex items-center justify-center group transition-transform duration-300 hover:scale-110"
                   >
                     {/* Base white image — fades out on hover */}
                     <img

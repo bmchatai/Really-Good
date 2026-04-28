@@ -4,30 +4,20 @@ export default function InteractiveGrid() {
   const floorRef = useRef(null);
   const glowRef = useRef(null);
 
-  // Mobile gets a static gradient instead of a 300vw × 150vh perspective floor
-  // with four animated grid layers — that whole thing rasters a huge area
-  // every frame and the pointer-mask is dead code on touch devices.
-  const [isMobile, setIsMobile] = useState(() => {
+  // Touch devices skip the mouse-mask glow layer (it's dead code without a
+  // cursor) but still get the full perspective floor + base grid + dots so
+  // the headline area matches the desktop look.
+  const [isTouch, setIsTouch] = useState(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return false;
-    return window.matchMedia('(max-width: 768px), (hover: none) and (pointer: coarse)').matches;
+    return window.matchMedia('(hover: none) and (pointer: coarse)').matches;
   });
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
-    const mq = window.matchMedia('(max-width: 768px), (hover: none) and (pointer: coarse)');
-    const update = () => setIsMobile(mq.matches);
+    const mq = window.matchMedia('(hover: none) and (pointer: coarse)');
+    const update = () => setIsTouch(mq.matches);
     mq.addEventListener('change', update);
     return () => mq.removeEventListener('change', update);
   }, []);
-
-  if (isMobile) {
-    return (
-      <div className="absolute inset-0 z-0 overflow-hidden bg-black pointer-events-none">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(47,215,191,0.18),transparent_60%)]" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black opacity-80" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,#000000_100%)] opacity-90" />
-      </div>
-    );
-  }
 
   const handlePointerMove = (e) => {
     if (!glowRef.current) return;
@@ -45,19 +35,19 @@ export default function InteractiveGrid() {
   };
 
   return (
-    <div 
-      className="absolute inset-0 z-0 overflow-hidden bg-black pointer-events-auto"
+    <div
+      className={`absolute inset-0 z-0 overflow-hidden bg-black ${isTouch ? 'pointer-events-none' : 'pointer-events-auto'}`}
       style={{ perspective: '800px' }}
     >
       {/* Background ambient glow at the horizon */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(47,215,191,0.15),transparent_60%)] pointer-events-none"></div>
 
       {/* 3D Floor Container */}
-      <div 
+      <div
         ref={floorRef}
-        onMouseMove={handlePointerMove}
-        onMouseLeave={handlePointerLeave}
-        className="absolute left-1/2 top-[35%] w-[300vw] h-[150vh] origin-top cursor-crosshair"
+        onMouseMove={isTouch ? undefined : handlePointerMove}
+        onMouseLeave={isTouch ? undefined : handlePointerLeave}
+        className={`absolute left-1/2 top-[35%] w-[300vw] h-[150vh] origin-top ${isTouch ? '' : 'cursor-crosshair'}`}
         style={{
           transform: 'translateX(-50%) rotateX(75deg) translateZ(0)',
           // Removed preserve-3d to stop extreme geometric/Z-fighting GPU glitches across devices
@@ -80,56 +70,62 @@ export default function InteractiveGrid() {
           ></div>
         </div>
 
-        {/* Glowing Dots at line intersections */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-50">
-          <div
-            className="absolute w-full grid-dots-animation"
-            style={{
-              top: '-100px',
-              height: 'calc(100% + 100px)',
-              backgroundImage: `radial-gradient(circle at 1px 1px, rgba(47, 215, 191, 1) 2px, transparent 3px)`,
-              backgroundSize: '100px 100px',
-              willChange: 'transform',
-            }}
-          ></div>
-        </div>
+        {/* Glowing Dots at line intersections — desktop only */}
+        {!isTouch && (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-50">
+            <div
+              className="absolute w-full grid-dots-animation"
+              style={{
+                top: '-100px',
+                height: 'calc(100% + 100px)',
+                backgroundImage: `radial-gradient(circle at 1px 1px, rgba(47, 215, 191, 1) 2px, transparent 3px)`,
+                backgroundSize: '100px 100px',
+                willChange: 'transform',
+              }}
+            ></div>
+          </div>
+        )}
 
-        {/* Interactive Glowing Grid - Revealed by Mouse Mask */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div
-            ref={glowRef}
-            className="absolute w-full grid-forward-animation"
-            style={{
-              top: '-100px',
-              height: 'calc(100% + 100px)',
-              backgroundImage: `
-                linear-gradient(rgba(47, 215, 191, 1) 2px, transparent 2px),
-                linear-gradient(90deg, rgba(47, 215, 191, 1) 2px, transparent 2px)
-              `,
-              backgroundSize: '100px 100px',
-              WebkitMaskImage: `radial-gradient(circle 400px at -1000px -1000px, black 0%, transparent 100%)`,
-              maskImage: `radial-gradient(circle 400px at -1000px -1000px, black 0%, transparent 100%)`,
-              willChange: 'transform',
-            }}
-          ></div>
-        </div>
+        {/* Interactive Glowing Grid — desktop only (mouse-mask is dead code on touch) */}
+        {!isTouch && (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            <div
+              ref={glowRef}
+              className="absolute w-full grid-forward-animation"
+              style={{
+                top: '-100px',
+                height: 'calc(100% + 100px)',
+                backgroundImage: `
+                  linear-gradient(rgba(47, 215, 191, 1) 2px, transparent 2px),
+                  linear-gradient(90deg, rgba(47, 215, 191, 1) 2px, transparent 2px)
+                `,
+                backgroundSize: '100px 100px',
+                WebkitMaskImage: `radial-gradient(circle 400px at -1000px -1000px, black 0%, transparent 100%)`,
+                maskImage: `radial-gradient(circle 400px at -1000px -1000px, black 0%, transparent 100%)`,
+                willChange: 'transform',
+              }}
+            ></div>
+          </div>
+        )}
 
-        {/* Scanline Effect - transform-based (GPU-composited) */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div
-            className="absolute w-full h-[200%] moving-scanline"
-            style={{
-              background: 'linear-gradient(to bottom, transparent 0%, rgba(47,215,191,0.12) 50%, transparent 100%)',
-              willChange: 'transform',
-            }}
-          ></div>
-        </div>
+        {/* Scanline Effect — desktop only */}
+        {!isTouch && (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            <div
+              className="absolute w-full h-[200%] moving-scanline"
+              style={{
+                background: 'linear-gradient(to bottom, transparent 0%, rgba(47,215,191,0.12) 50%, transparent 100%)',
+                willChange: 'transform',
+              }}
+            ></div>
+          </div>
+        )}
       </div>
-      
+
       {/* Vignette - Fades grid out at the edges and horizon */}
       <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black pointer-events-none opacity-80"></div>
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,#000000_100%)] pointer-events-none opacity-90"></div>
-      
+
       {/* Global CSS for the custom grid animations */}
       <style>{`
         .grid-forward-animation {
@@ -148,6 +144,11 @@ export default function InteractiveGrid() {
         }
         .moving-scanline {
           animation: scanline 8s linear infinite;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .grid-forward-animation,
+          .grid-dots-animation,
+          .moving-scanline { animation: none !important; }
         }
       `}</style>
     </div>

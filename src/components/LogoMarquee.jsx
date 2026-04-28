@@ -18,7 +18,6 @@ const BIG_BRANDS = [
 ];
 
 const REST = [
-  "Afh.png",
   "afhgrau.png",
   "Bolt.png",
   "Celv.png",
@@ -86,17 +85,17 @@ function Row({ logos, direction = 'left', durationSec = 45, rowId, size = 'md' }
   }, [direction, durationSec, rowId]);
 
   const sizeCls = size === 'lg'
-    ? 'h-28 sm:h-36 md:h-44 w-64 sm:w-80 md:w-96'
-    : 'h-20 sm:h-24 md:h-28 w-48 sm:w-60 md:w-72';
+    ? 'h-20 sm:h-32 md:h-44 w-44 sm:w-72 md:w-96'
+    : 'h-16 sm:h-24 md:h-28 w-36 sm:w-60 md:w-72';
 
   const content = (
-    <div className="flex items-center gap-8 sm:gap-12 md:gap-16 px-4 sm:px-6">
+    <div className="flex items-center gap-1 sm:gap-6 md:gap-10 px-1 sm:px-4">
       {logos.map((logo, idx) => {
         const imgUrl = encodeURI(`/kunden-logos/${logo}`);
         return (
           <div
             key={idx}
-            className={`relative ${sizeCls} flex-shrink-0 cursor-pointer pointer-events-auto group flex items-center justify-center p-1`}
+            className={`relative ${sizeCls} flex-shrink-0 cursor-pointer pointer-events-auto group flex items-center justify-center`}
           >
             <img
               src={imgUrl}
@@ -164,10 +163,12 @@ export default function LogoMarquee({ title = "Brands we work with", hideBorder 
     );
   }
 
-  // Row 1: prominent brands first, then half of the rest
-  const row1Logos = [...BIG_BRANDS, ...REST.slice(0, 8)];
-  // Row 2: the rest, interleaved with some big brands so they appear in both rows
-  const row2Logos = [...REST.slice(8), ...BIG_BRANDS.slice(0, 5)];
+  // Even split so both rows have the same width — combined with the same
+  // durationSec, that means identical pixel-per-second speed across rows.
+  const half = Math.ceil((BIG_BRANDS.length + REST.length) / 2);
+  const allLogos = [...BIG_BRANDS, ...REST];
+  const row1Logos = allLogos.slice(0, half);
+  const row2Logos = allLogos.slice(half);
 
   return (
     <div className={`hero-el w-full flex flex-col items-center mt-12 sm:mt-20 pt-8 sm:pt-12 relative z-10 ${hideBorder ? '' : 'border-t border-white/5'}`}>
@@ -177,7 +178,7 @@ export default function LogoMarquee({ title = "Brands we work with", hideBorder 
 
       <div className="w-full flex flex-col gap-4 sm:gap-6 pb-8 sm:pb-12">
         <Row logos={row1Logos} direction="left"  durationSec={50} rowId="logo-marquee-row-1" size="lg" />
-        <Row logos={row2Logos} direction="right" durationSec={55} rowId="logo-marquee-row-2" size="lg" />
+        <Row logos={row2Logos} direction="right" durationSec={50} rowId="logo-marquee-row-2" size="lg" />
       </div>
     </div>
   );

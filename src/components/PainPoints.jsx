@@ -45,7 +45,6 @@ function BrightWord({ text, delay = 0 }) {
   const wordRefs = useRef([]);
 
   useEffect(() => {
-    const isMobile = window.matchMedia('(max-width: 768px), (hover: none) and (pointer: coarse)').matches;
     wordRefs.current.forEach((el, i) => {
       if (!el) return;
       gsap.fromTo(
@@ -54,10 +53,7 @@ function BrightWord({ text, delay = 0 }) {
         {
           color: 'rgba(255,255,255,0.9)',
           ease: 'none',
-          duration: isMobile ? 0.35 : undefined,
-          scrollTrigger: isMobile
-            ? { trigger: el, start: 'top 88%', toggleActions: 'play none none none' }
-            : { trigger: el, start: 'top 88%', end: 'top 52%', scrub: 0.6 },
+          scrollTrigger: { trigger: el, start: 'top 88%', end: 'top 52%', scrub: 0.6 },
           delay: delay + i * 0.04,
         }
       );
@@ -121,9 +117,9 @@ export default function PainPoints() {
           scrollTrigger: { trigger: '.pp-list', start: 'top 78%' } }
       );
 
-      /* 4. Quote: SplitText word-by-word scroll brightening */
+      /* 4. Quote: SplitText word-by-word scroll brightening (scrub on both) */
       const split = new SplitText('.pp-quote-body', { type: 'words' });
-      split.words.forEach((word, idx) => {
+      split.words.forEach((word) => {
         // Teal words stay teal; normal words go white
         const isTeal = word.classList.contains('pp-teal');
         gsap.fromTo(word,
@@ -132,11 +128,7 @@ export default function PainPoints() {
             opacity: 1,
             color: isTeal ? ACCENT : '#ffffff',
             ease: 'none',
-            duration: isMobile ? 0.35 : undefined,
-            delay: isMobile ? idx * 0.02 : 0,
-            scrollTrigger: isMobile
-              ? { trigger: '.pp-quote', start: 'top 80%', toggleActions: 'play none none none' }
-              : { trigger: word, start: 'top 90%', end: 'top 52%', scrub: 0.7 },
+            scrollTrigger: { trigger: word, start: 'top 90%', end: 'top 52%', scrub: 0.7 },
           }
         );
       });
@@ -155,11 +147,15 @@ export default function PainPoints() {
           scrollTrigger: { trigger: '.pp-rule', start: 'top 90%' } }
       );
 
-      /* 5. Dashboard slide in */
+      /* 5. Dashboard slide in — reverses on scroll up */
       gsap.fromTo('.pp-dashboard',
-        { x: 70, opacity: 0 },
-        { x: 0, opacity: 1, duration: 1, ease: 'power3.out',
-          scrollTrigger: { trigger: '.pp-dashboard', start: 'top 80%' } }
+        { x: isMobile ? 0 : 70, y: isMobile ? 40 : 0, opacity: 0 },
+        { x: 0, y: 0, opacity: 1, duration: 1, ease: 'power3.out',
+          scrollTrigger: {
+            trigger: '.pp-dashboard',
+            start: 'top 80%',
+            toggleActions: 'play reverse play reverse',
+          } }
       );
 
       /* 6. Chart line draws as user scrolls; once dot arrives, marching kicks in */
@@ -199,29 +195,41 @@ export default function PainPoints() {
 
         if (isMobile) {
           // On mobile, scrubbing getPointAtLength on every frame stalls iOS
-          // Safari and the dashboard section was crashing the tab. Draw the
-          // line once on enter and stop — no marching, no infinite tweens
-          // mutating filtered SVG nodes.
+          // Safari and the dashboard section was crashing the tab. Use a
+          // fixed-duration tween that plays/reverses on scroll enter/leave —
+          // direct DOM writes (no per-frame gsap.set tween allocations).
+          // Pre-compute dot positions instead of calling getPointAtLength
+          // every frame to avoid the iOS Safari stall.
+          const SAMPLES = 30;
+          const dotPositions = dot
+            ? Array.from({ length: SAMPLES + 1 }, (_, k) => line.getPointAtLength((len * k) / SAMPLES))
+            : null;
+
+          const proxy = { p: 0 };
+          const drawTween = gsap.to(proxy, {
+            p: 1,
+            duration: 1.6,
+            ease: 'power2.out',
+            paused: true,
+            onUpdate() {
+              line.style.strokeDashoffset = len * (1 - proxy.p);
+              if (dot && dotPositions) {
+                const idx = Math.min(SAMPLES, Math.round(proxy.p * SAMPLES));
+                const pt = dotPositions[idx];
+                dot.setAttribute('cx', pt.x);
+                dot.setAttribute('cy', pt.y);
+              }
+            },
+          });
+
           ScrollTrigger.create({
             trigger: '.pp-dashboard',
-            start: 'top 80%',
-            once: true,
-            onEnter: () => {
-              const proxy = { p: 0 };
-              gsap.to(proxy, {
-                p: 1,
-                duration: 1.6,
-                ease: 'power2.out',
-                onUpdate() {
-                  gsap.set(line, { strokeDashoffset: len * (1 - proxy.p) });
-                  if (dot) {
-                    const pt = line.getPointAtLength(len * proxy.p);
-                    dot.setAttribute('cx', pt.x);
-                    dot.setAttribute('cy', pt.y);
-                  }
-                },
-              });
-            },
+            start: 'top 85%',
+            end: 'bottom 30%',
+            onEnter:     () => drawTween.play(),
+            onLeave:     () => drawTween.reverse(),
+            onEnterBack: () => drawTween.play(),
+            onLeaveBack: () => drawTween.reverse(),
           });
         } else {
           ScrollTrigger.create({
@@ -244,11 +252,12 @@ export default function PainPoints() {
         }
       }
 
-      // Pulsing end-point dot — desktop only. On mobile the infinite tween
-      // mutating a filtered SVG node was a crash vector.
-      if (chartDotRef.current && !isMobile) {
+      // Pulsing end-point dot. The dot has no SVG filter on mobile
+      // (filter is gated by isMobileRender in the JSX), so the infinite
+      // tween is safe — only the radius and opacity attributes mutate.
+      if (chartDotRef.current) {
         gsap.to(chartDotRef.current, {
-          attr: { r: 8 },
+          attr: { r: isMobile ? 7 : 8 },
           opacity: 0.45,
           duration: 1.1,
           ease: 'power1.out',
@@ -260,11 +269,15 @@ export default function PainPoints() {
         gsap.fromTo(chartAreaRef.current,
           { opacity: 0 },
           { opacity: 1, duration: 1.2, ease: 'power2.out', delay: 0.4,
-            scrollTrigger: { trigger: '.pp-dashboard', start: 'top 78%' } }
+            scrollTrigger: {
+              trigger: '.pp-dashboard',
+              start: 'top 78%',
+              toggleActions: 'play reverse play reverse',
+            } }
         );
       }
 
-      /* 7. KPI counters count up */
+      /* 7. KPI counters — count up on enter, count back down on scroll up */
       gsap.utils.toArray('.pp-counter').forEach((el) => {
         const target = parseFloat(el.dataset.target);
         const prefix = el.dataset.prefix || '';
@@ -272,18 +285,20 @@ export default function PainPoints() {
         gsap.fromTo({ v: 0 }, { v: target }, {
           duration: 1.5, ease: 'power2.out',
           onUpdate() { el.textContent = prefix + Math.round(this.targets()[0].v) + suffix; },
-          scrollTrigger: { trigger: el, start: 'top 88%' },
+          scrollTrigger: {
+            trigger: el,
+            start: 'top 88%',
+            toggleActions: 'play reverse play reverse',
+          },
         });
       });
 
-      /* 8. Pulsing rings — desktop only */
-      if (!isMobile) {
-        gsap.to('.pp-ring', {
-          scale: 2.2, opacity: 0, duration: 1.6,
-          repeat: -1, ease: 'power1.out',
-          stagger: { each: 0.5, repeat: -1 },
-        });
-      }
+      /* 8. Pulsing rings — HTML divs (no SVG filter), safe on mobile */
+      gsap.to('.pp-ring', {
+        scale: isMobile ? 1.9 : 2.2, opacity: 0, duration: 1.6,
+        repeat: -1, ease: 'power1.out',
+        stagger: { each: 0.5, repeat: -1 },
+      });
 
     }, container);
 

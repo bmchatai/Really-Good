@@ -74,9 +74,10 @@ export default function Process() {
     const isMobile = window.matchMedia('(max-width: 768px), (hover: none) and (pointer: coarse)').matches;
     const ctx = gsap.context(() => {
 
-      // On mobile native scroll, scrub-based ScrollTriggers stutter (especially
-      // during iOS momentum). Use plain play-on-enter so steps reliably appear.
-      const TOGGLE = isMobile ? 'play none none none' : 'play reverse play reverse';
+      // Animations play forward when entering the viewport and reverse
+      // when scrolling back up — keeps the scroll experience consistent
+      // with the rest of the site on both desktop and mobile.
+      const TOGGLE = 'play reverse play reverse';
 
       /* ── 1. CINEMATIC HEADER ─────────────────────────────────────────────── */
       gsap.fromTo('.prc-badge',
@@ -111,14 +112,16 @@ export default function Process() {
         const lineEl  = lineRefs.current[i];
         const { circleRef, pathRef } = checkRefs.current[i];
 
-        /* Card slides up / back down — drop the blur on mobile (cheap GPU + safer) */
+        /* Card slides up / back down — drop the blur on mobile (cheap GPU + safer).
+           Mobile triggers fire later so the card is visibly in view before the
+           animation starts (otherwise it plays while still below the fold). */
         gsap.fromTo(card,
           isMobile
             ? { opacity: 0, y: 24 }
             : { opacity: 0, y: 32, filter: 'blur(3px)' },
           isMobile
             ? { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out',
-                scrollTrigger: { trigger: card, start: 'top 92%', toggleActions: TOGGLE } }
+                scrollTrigger: { trigger: card, start: 'top 78%', toggleActions: TOGGLE } }
             : { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.6, ease: 'power3.out',
                 scrollTrigger: { trigger: card, start: 'top 90%', toggleActions: TOGGLE } }
         );
@@ -127,31 +130,33 @@ export default function Process() {
         gsap.fromTo([numEl, tagEl],
           { opacity: 0, x: -12 },
           { opacity: 1, x: 0, duration: 0.4, ease: 'power2.out', stagger: 0.05,
-            scrollTrigger: { trigger: card, start: 'top 88%', toggleActions: TOGGLE } }
+            scrollTrigger: { trigger: card, start: isMobile ? 'top 75%' : 'top 88%', toggleActions: TOGGLE } }
         );
 
         /* Title clip reveal */
         gsap.fromTo(titleEl,
           { clipPath: 'inset(0 100% 0 0)', opacity: 0 },
           { clipPath: 'inset(0 0% 0 0)', opacity: 1, duration: 0.65, ease: 'power3.out',
-            scrollTrigger: { trigger: card, start: 'top 86%', toggleActions: TOGGLE } }
+            scrollTrigger: { trigger: card, start: isMobile ? 'top 73%' : 'top 86%', toggleActions: TOGGLE } }
         );
 
         /* Desc */
         gsap.fromTo(descEl,
           { opacity: 0, y: 10 },
           { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out',
-            scrollTrigger: { trigger: card, start: 'top 84%', toggleActions: TOGGLE } }
+            scrollTrigger: { trigger: card, start: isMobile ? 'top 71%' : 'top 84%', toggleActions: TOGGLE } }
         );
 
-        /* Checkmark — scrub on desktop, plain play-once on mobile */
+        /* Checkmark — desktop scrubs with scroll, mobile plays forward/reverse
+           on a fixed timeline. iOS native scroll + momentum makes per-frame
+           scrub unreliable, so on mobile we use toggleActions instead. */
         if (circleRef && pathRef) {
           if (isMobile) {
             const tl = gsap.timeline({
-              scrollTrigger: { trigger: card, start: 'top 85%', toggleActions: 'play none none none' },
+              scrollTrigger: { trigger: card, start: 'top 70%', toggleActions: TOGGLE },
             });
-            tl.to(circleRef, { strokeDashoffset: 0, duration: 0.6, ease: 'power2.out' })
-              .to(pathRef,   { strokeDashoffset: 0, duration: 0.3, ease: 'power2.out' }, '-=0.1');
+            tl.fromTo(circleRef, { strokeDashoffset: 63 }, { strokeDashoffset: 0, duration: 0.7, ease: 'power2.out' })
+              .fromTo(pathRef,   { strokeDashoffset: 14 }, { strokeDashoffset: 0, duration: 0.35, ease: 'power2.out' }, '-=0.15');
           } else {
             ScrollTrigger.create({
               trigger: card,
@@ -169,13 +174,13 @@ export default function Process() {
           }
         }
 
-        /* Connector line — scrub on desktop, play-once on mobile */
+        /* Connector line — same split: scrub on desktop, toggle on mobile. */
         if (lineEl && i < steps.length - 1) {
           if (isMobile) {
             gsap.fromTo(lineEl,
               { height: 0 },
-              { height: 40, duration: 0.45, ease: 'power2.out',
-                scrollTrigger: { trigger: card, start: 'top 80%', toggleActions: 'play none none none' } }
+              { height: 40, duration: 0.55, ease: 'power2.out',
+                scrollTrigger: { trigger: card, start: 'top 65%', toggleActions: TOGGLE } }
             );
           } else {
             ScrollTrigger.create({
