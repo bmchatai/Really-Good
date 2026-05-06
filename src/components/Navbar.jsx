@@ -35,7 +35,7 @@ export default function Navbar() {
         href="https://form.typeform.com/to/dDmy0xtw"
         target="_blank"
         rel="noreferrer"
-        className="group relative overflow-hidden bg-gradient-accent text-black font-semibold text-xs sm:text-sm px-4 sm:px-6 py-2 sm:py-2.5 rounded-full flex items-center gap-2 hover:scale-105 transition-transform duration-300 will-change-transform"
+        className="group relative overflow-hidden bg-[#e6321c] text-white font-semibold text-xs sm:text-sm px-4 sm:px-6 py-2 sm:py-2.5 rounded-full flex items-center gap-2 hover:scale-105 transition-transform duration-300 will-change-transform btn-red-glow"
       >
         <span className="relative z-10 flex items-center gap-2">
           Free Video sichern <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

@@ -10,9 +10,9 @@ gsap.registerPlugin(ScrollTrigger);
 
 // Split heading lines into word spans per line so we can reveal line-by-line
 const HEADING_LINES = [
-  ["WAS", "SPRICHT", "GEGEN"],
-  ["EIN", "KOSTENLOSES"],
-  ["VIDEO?"],
+  ["WIR", "PRODUZIEREN"],
+  ["DIR", "KOSTENLOS"],
+  ["EIN", "TESTVIDEO"],
 ];
 
 export default function FreeVideoCTA() {
@@ -158,7 +158,7 @@ export default function FreeVideoCTA() {
                   key={wi}
                   className="inline-block overflow-hidden align-bottom pb-1 mr-[0.25em] last:mr-0"
                 >
-                  {word === 'KOSTENLOSES' ? (
+                  {word === 'KOSTENLOS' ? (
                     <span className="cta-word inline-block" ref={highlightRef}>{word}</span>
                   ) : (
                     <span className="cta-word inline-block">{word}</span>
